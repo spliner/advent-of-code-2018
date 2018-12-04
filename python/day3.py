@@ -25,8 +25,7 @@ def parseline(line, regex):
     h = int(groups['h'])
     x2 = x1 + w
     y2 = y1 + h
-    return Claim(
-        int(groups['id']), x1, y1, x2, y2, w, h)
+    return Claim(int(groups['id']), x1, y1, x2, y2, w, h)
 
 
 if __name__ == '__main__':

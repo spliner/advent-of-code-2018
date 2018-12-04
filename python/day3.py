@@ -22,6 +22,21 @@ def part1(claims):
     return len(intersections_points)
 
 
+def part2(claims):
+    intersection_ids = set()
+    for index, claim in enumerate(claims):
+        for comparison in claims[index + 1:]:
+            intersection = calculate_intersection(
+                claim.bounds, comparison.bounds)
+            if not intersection:
+                continue
+            intersection_ids.add(claim.id)
+            intersection_ids.add(comparison.id)
+    for claim in claims:
+        if claim.id not in intersection_ids:
+            return claim.id
+
+
 def calculate_intersection(rectangle1, rectangle2):
     x1 = max(rectangle1.p1.x, rectangle2.p1.x)
     y1 = max(rectangle1.p1.y, rectangle2.p1.y)
@@ -69,9 +84,13 @@ if __name__ == '__main__':
         '#2 @ 3,1: 4x4',
         '#3 @ 5,5: 2x2'
     ]
-    part1_test_data = [parseline(l, REGEX) for l in lines]
-    assert part1(part1_test_data) == 4
+    test_data = [parseline(l, REGEX) for l in lines]
+    assert part1(test_data) == 4
 
     claims = parsefile(INPUT, REGEX)
     area = part1(claims)
     print(area)
+
+    assert part2(test_data) == 3
+    claim_id = part2(claims)
+    print(claim_id)

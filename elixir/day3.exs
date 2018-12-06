@@ -16,10 +16,23 @@ end
 defmodule Day3 do
     def part1(path, regex) do
         # compiled_regex = Regex.compile!(regex)
-        path
-        |> File.read!()
-        |> String.split("\r\n", trim: true)
-        |> Enum.map(fn l -> parse_line(l, regex) end)
+        lines = path
+            |> File.read!()
+            |> String.split("\r\n", trim: true)
+            |> Enum.map(fn l -> parse_line(l, regex) end)
+
+        lines
+        |> Enum.with_index()
+        |> Enum.reduce(MapSet.new(), fn {x, i}, acc ->
+            points = lines
+                |> Enum.drop(i + 1)
+                |> Enum.map(fn y -> calculate_intersection(x.bounds, y.bounds) end)
+                |> Enum.filter(fn i -> !!i end)
+                |> Enum.map(fn i -> get_all_points(i) end)
+                |> List.flatten()
+            MapSet.union(acc, MapSet.new(points))
+        end)
+        |> MapSet.size()
         |> IO.inspect()
     end
 
@@ -40,14 +53,26 @@ defmodule Day3 do
         y2 = Enum.min([rectangle1.p2.y, rectangle2.p2.y])
         is_valid = x1 <= x2 and y1 <= y2
         if is_valid do
-            %Rectangle{p1: %Point(x: x1, y: y2), p2: %Point{x: x2, y: y2}}
+            p1 = %Point{x: x1, y: y1}
+            p2 = %Point{x: x2, y: y2}
+            %Rectangle{p1: p1, p2: p2}
         else
             nil
         end
     end
+
+    defp get_all_points(rectangle) when is_map(rectangle) do
+        x_range = rectangle.p1.x..rectangle.p2.x
+        y_range = rectangle.p1.y..rectangle.p2.y
+
+        x_range
+        |> Enum.map(fn x -> Enum.map(y_range, fn y -> {x, y} end) end)
+        |> List.flatten()
+    end
 end
+regex = ~r/#(?<id>\d+)\s@\s(?<x>\d+),(?<y>\d+):\s(?<w>\d+)x(?<h>\d+)/
+test_path = "../inputs/day3_test.txt"
+Day3.part1(test_path, regex)
 
 path = "../inputs/day3.txt"
-regex = ~r/#(?<id>\d+)\s@\s(?<x>\d+),(?<y>\d+):\s(?<w>\d+)x(?<h>\d+)/
-
 Day3.part1(path, regex)

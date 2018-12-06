@@ -15,10 +15,7 @@ end
 
 defmodule Day3 do
     def part1(path, regex) do
-        lines = path
-            |> File.read!()
-            |> String.split("\r\n", trim: true)
-            |> Enum.map(fn l -> parse_line(l, regex) end)
+        lines = read_file(path, regex)
 
         lines
         |> Enum.with_index()
@@ -33,6 +30,13 @@ defmodule Day3 do
         end)
         |> MapSet.size()
         |> IO.inspect()
+    end
+
+    defp read_file(path, regex) do
+        path
+        |> File.read!()
+        |> String.split("\r\n", trim: true)
+        |> Enum.map(fn l -> parse_line(l, regex) end)
     end
 
     defp parse_line(line, regex) when is_binary(line) do
@@ -68,10 +72,37 @@ defmodule Day3 do
         |> Enum.map(fn x -> Enum.map(y_range, fn y -> {x, y} end) end)
         |> List.flatten()
     end
+
+    def part2(path, regex) do
+        lines = read_file(path, regex)
+        
+        intersected_ids = lines
+            |> Enum.with_index()
+            |> Enum.reduce(MapSet.new(), fn {x, i}, acc ->
+                ids = lines
+                    |> Enum.drop(i + 1)
+                    |> Enum.filter(fn y -> !!calculate_intersection(x.bounds, y.bounds) end)
+                    |> List.foldl(MapSet.new(), fn y, acc -> MapSet.put(acc, y.id) end)
+
+                acc = 
+                    if MapSet.size(ids) > 0 do
+                        MapSet.put(acc, x.id)
+                    else
+                        acc
+                    end
+                MapSet.union(acc, ids)
+            end)
+        
+        claim = lines |> Enum.find(fn l -> !MapSet.member?(intersected_ids, l.id) end)
+        IO.inspect(claim.id)
+    end
 end
 regex = ~r/#(?<id>\d+)\s@\s(?<x>\d+),(?<y>\d+):\s(?<w>\d+)x(?<h>\d+)/
 test_path = "../inputs/day3_test.txt"
-Day3.part1(test_path, regex)
-
 path = "../inputs/day3.txt"
+
+Day3.part1(test_path, regex)
 Day3.part1(path, regex)
+
+Day3.part2(test_path, regex)
+Day3.part2(path, regex)

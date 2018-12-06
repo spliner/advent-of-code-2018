@@ -15,7 +15,6 @@ end
 
 defmodule Day3 do
     def part1(path, regex) do
-        # compiled_regex = Regex.compile!(regex)
         lines = path
             |> File.read!()
             |> String.split("\r\n", trim: true)

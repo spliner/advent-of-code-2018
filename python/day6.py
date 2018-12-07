@@ -11,7 +11,7 @@ Rectangle = collections.namedtuple('Rectangle', 'p1 p2')
 
 def part1(coordinates):
     distance_count = {}
-    infinite_coordonates = []
+    infinite_coordinates = []
     for p in coordinates:
         key = get_key(p)
         distance_count[key] = 0
@@ -32,21 +32,16 @@ def part1(coordinates):
 
             min_dist_key = min_coordinates[0]
             if is_out_of_bounds(bounds, current_coordinate):
-                infinite_coordonates.append(min_dist_key)
+                infinite_coordinates.append(min_dist_key)
             else:
-                distance_count[min_dist_key] = distance_count[min_dist_key] + 1
+                distance_count[min_dist_key] += 1
     counts = {k: v for k, v in distance_count.items()
-              if k not in infinite_coordonates}
+              if k not in infinite_coordinates}
     return max(counts.values())
 
 
 def get_key(point):
     return f'{point.x}, {point.y}'
-
-
-def get_point(key):
-    values = key.split(', ')
-    return Point(values[0], values[1])
 
 
 def is_out_of_bounds(bounds, point):

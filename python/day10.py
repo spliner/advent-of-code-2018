@@ -48,20 +48,25 @@ def parseline(line: str, regex: str) -> Point:
     return Point(Coordinate(pos_x, pos_y), Coordinate(vel_x, vel_y))
 
 
-def get_bounds(points -> List[Point]):
-    x1 = min(points, key=lambda p: p.x).x
-    y1 = min(points, key=lambda p: p.y).y
-    x2 = max(points, key=lambda p: p.x).x
-    y2 = max(points, key=lambda p: p.y).y
+def get_bounds(points):
+    x1 = min(points, key=lambda p: p.position.x).position.x
+    y1 = min(points, key=lambda p: p.position.y).position.y
+    x2 = max(points, key=lambda p: p.position.x).position.x
+    y2 = max(points, key=lambda p: p.position.y).position.y
     return (Coordinate(x1, y1), Coordinate(x2, y2))
 
 
-def draw_point(point, current_step, screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+def draw_point(point, current_step, screen, bounds, viewport_bounds):
     position = point.get_position(current_step)
+    origin_x = viewport_bounds[1].x / 2
+    origin_y = viewport_bounds[1].y / 2
 
 
 if __name__ == '__main__':
-    test_points = parsefile(TEST_INPUT, REGEX)
+    points = parsefile(INPUT, REGEX)
+    bounds = get_bounds(points)
+    viewport_bounds = (Coordinate(0, 0), Coordinate(SCREEN_WIDTH, SCREEN_HEIGHT))
+    print(bounds)
 
     pygame.init()
     pygame.font.init()
@@ -120,8 +125,8 @@ if __name__ == '__main__':
                 elif event.key == pygame.K_LEFT:
                     current_step = max(0, current_step - steps)
 
-        for point in test_points:
-            draw_point(point, current_step, screen, SCREEN_WIDTH, SCREEN_HEIGHT):
+        for point in points:
+            draw_point(point, current_step, screen, bounds, viewport_bounds)
 
         pygame.display.flip()
         clock.tick(60)

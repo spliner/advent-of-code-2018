@@ -1,10 +1,11 @@
 import re
 import collections
+import pprint
 
 from typing import List
 from day10_ui import Day10UIHelper
 
-SCREEN_WIDTH = 500
+SCREEN_WIDTH = 2000
 BACKGROUND_COLOR = (0, 0, 0)
 POINT_COLOR = (255, 0, 255)
 FONTSIZE = 10
@@ -48,25 +49,35 @@ def parseline(line: str, regex: str) -> Point:
     return Point(Coordinate(pos_x, pos_y), Coordinate(vel_x, vel_y))
 
 
-def get_bounds(points):
+def get_bounds(points, current_step):
+    min_x = 0
+    min_y = 0
+    max_x = 0
+    max_y = 0
+    for pont in points:
+        position = point.get_position(current_step)
+        if position.x < min_x:
+            min_x = position.x
+        if position.y < min_y:
+            min_y = position.y
+        if position.x > max_x:
+            max_x = position.x
     x1 = min(points, key=lambda p: p.position.x).position.x
     y1 = min(points, key=lambda p: p.position.y).position.y
-    start = min([x1, y1])
     x2 = max(points, key=lambda p: p.position.x).position.x
     y2 = max(points, key=lambda p: p.position.y).position.y
-    end = max([x2, y2])
-    return (Coordinate(start, start), Coordinate(end, end))
+    return (Coordinate(x1, y1), Coordinate(x2, y2))
 
 
-def get_viewport_coordinate(point, current_step, bounds, viewport_scale):
+def get_viewport_coordinate(point, current_step, bounds, viewport_scale, tx, ty):
     position = point.get_position(current_step)
     new_x = (position.x + bounds[0].x * -1) * viewport_scale
     new_y = (position.y + bounds[0].y * -1) * viewport_scale
-    return Coordinate(round(new_x), round(new_y))
+    return Coordinate(round(tx(position.x)), round(ty(position.y)))
 
 
 if __name__ == '__main__':
-    points = parsefile(TEST_INPUT, REGEX)
+    points = parsefile(INPUT, REGEX)
     bounds = get_bounds(points)
 
     width = abs(bounds[0].x) + abs(bounds[1].x)
@@ -74,8 +85,14 @@ if __name__ == '__main__':
     aspect_ratio = width / height
 
     viewport_width = SCREEN_WIDTH
-    viewport_height = round(SCREEN_WIDTH * aspect_ratio)
+    viewport_height = round(viewport_width * aspect_ratio)
     viewport_scale = viewport_width / width
+    current_step = 0
+    steps = 1
+
+    def tx(x): return viewport_width * (x + bounds[1].x) / width
+
+    def ty(y): return viewport_height * (bounds[1].y - y) / height
 
     uiHelper = Day10UIHelper(FONT_COLOR,
                              FONTSIZE,
@@ -83,9 +100,14 @@ if __name__ == '__main__':
                              viewport_width,
                              viewport_height)
 
-    current_step = 0
-    steps = 1
-
+    for point in points:
+        coordinate = get_viewport_coordinate(point,
+                                             current_step,
+                                             bounds,
+                                             viewport_scale,
+                                             tx,
+                                             ty)
+        print(f'{coordinate.x}, {coordinate.y}')
     while not uiHelper.done:
         uiHelper.onloop(BACKGROUND_COLOR, current_step, steps)
 
@@ -98,8 +120,11 @@ if __name__ == '__main__':
         elif uiHelper.is_left_pressed():
             current_step = max(0, current_step - steps)
 
-        viewport_coordinates = [get_viewport_coordinate(
-            p, current_step, bounds, viewport_scale) for p in points]
+        bounds = get_bounds(points, current_step)
+        viewport_coordinates = [
+            get_viewport_coordinate(
+                p, current_step, bounds, viewport_scale, tx, ty)
+            for p in points]
         for coordinate in viewport_coordinates:
             uiHelper.draw_coordinate(coordinate, POINT_COLOR)
 

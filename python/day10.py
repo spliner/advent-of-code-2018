@@ -1,11 +1,13 @@
 import re
 import pygame
 import collections
+import pprint
+import time
 
 from typing import List
 
-SCREEN_WIDTH = 500
-SCREEN_HEIGHT = 500
+SCREEN_WIDTH = 1000
+SCREEN_HEIGHT = 1000
 BACKGROUND_COLOR = (0, 0, 0)
 POINT_COLOR = (255, 0, 255)
 FONT_COLOR = (255, 255, 255)
@@ -51,22 +53,32 @@ def parseline(line: str, regex: str) -> Point:
 def get_bounds(points):
     x1 = min(points, key=lambda p: p.position.x).position.x
     y1 = min(points, key=lambda p: p.position.y).position.y
+    start = min([x1, y1])
+
     x2 = max(points, key=lambda p: p.position.x).position.x
     y2 = max(points, key=lambda p: p.position.y).position.y
-    return (Coordinate(x1, y1), Coordinate(x2, y2))
+    end = max([x2, y2])
+    return (Coordinate(start, start), Coordinate(end, end))
 
 
 def draw_point(point, current_step, screen, bounds, viewport_bounds):
+    w = abs(bounds[0].x) + abs(bounds[1].x)
+    h = abs(bounds[0].y) + abs(bounds[1].y)
     position = point.get_position(current_step)
     origin_x = viewport_bounds[1].x / 2
     origin_y = viewport_bounds[1].y / 2
+    new_x = (position.x + abs(bounds[0].x)) * SCREEN_WIDTH / w
+    new_y = (position.y + abs(bounds[0].y)) * SCREEN_HEIGHT / h
+    return Coordinate(round(new_x), round(new_y))
 
 
 if __name__ == '__main__':
     points = parsefile(INPUT, REGEX)
     bounds = get_bounds(points)
-    viewport_bounds = (Coordinate(0, 0), Coordinate(SCREEN_WIDTH, SCREEN_HEIGHT))
+    viewport_bounds = (Coordinate(0, 0), Coordinate(
+        SCREEN_WIDTH, SCREEN_HEIGHT))
     print(bounds)
+    print(len(points))
 
     pygame.init()
     pygame.font.init()
@@ -77,6 +89,27 @@ if __name__ == '__main__':
     current_step = 0
     steps = 1
     done = False
+    keys = {
+        pygame.K_DOWN: False,
+        pygame.K_UP: False,
+        pygame.K_LEFT: False,
+        pygame.K_RIGHT: False
+    }
+
+    foo = [(p, draw_point(p, current_step, screen, bounds, viewport_bounds)) for p in points]
+    bar = sorted(foo, key=lambda f: f[1].x)
+    baz = [(p, p.get_position(1000)) for p in points]
+    pprint.pprint(baz)
+    # for b in baz:
+    #     pygame.draw.rect(screen, POINT_COLOR, (b[0].x, b[0].y, 1, 1))
+
+    # pprint.pprint(bar)
+    # for i, f in enumerate(foo):
+    #     text = font.render(f'{f[0].position.x}, {f[0].position.y}', False, FONT_COLOR)
+    #     screen.blit(text, (f[1].x, f[1].y))
+    #     pygame.display.flip()
+    #     pygame.time.wait(1000)
+
     while not done:
         screen.fill(BACKGROUND_COLOR)
         text = font.render('Right arrow: next step', False, FONT_COLOR)
@@ -116,17 +149,37 @@ if __name__ == '__main__':
                 done = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
-                    steps += 1
+                    keys[pygame.K_UP] = True
                 elif event.key == pygame.K_DOWN:
-                    if steps > 1:
-                        steps -= 1
+                    keys[pygame.K_DOWN] = True
                 elif event.key == pygame.K_RIGHT:
-                    current_step += steps
+                    keys[pygame.K_RIGHT] = True
                 elif event.key == pygame.K_LEFT:
-                    current_step = max(0, current_step - steps)
+                    keys[pygame.K_LEFT] = True
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_UP:
+                    keys[pygame.K_UP] = False
+                elif event.key == pygame.K_DOWN:
+                    keys[pygame.K_DOWN] = False
+                elif event.key == pygame.K_RIGHT:
+                    keys[pygame.K_RIGHT] = False
+                elif event.key == pygame.K_LEFT:
+                    keys[pygame.K_LEFT] = False
 
-        for point in points:
-            draw_point(point, current_step, screen, bounds, viewport_bounds)
+        if keys[pygame.K_UP]:
+            steps += 1
+        elif keys[pygame.K_DOWN]:
+            steps = max(1, steps - 1)
+        elif keys[pygame.K_RIGHT]:
+            current_step += steps
+        elif keys[pygame.K_LEFT]:
+            current_step = max(0, current_step - steps)
+
+        foo = [(p, draw_point(p, current_step, screen, bounds, viewport_bounds)) for p in points]
+        for f in foo:
+            text = font.render(f'{f[0].velocity.x}, {f[0].velocity.y}', False, FONT_COLOR)
+            screen.blit(text, (f[1].x, f[1].y))
+            # pygame.draw.rect(screen, POINT_COLOR, (f[1].x, f[1].y, 1, 1))
 
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(10)

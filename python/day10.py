@@ -1,11 +1,12 @@
 import re
+import itertools
 import collections
 import pprint
 
 from typing import List
 from day10_ui import Day10UIHelper
 
-SCREEN_WIDTH = 2000
+SCREEN_WIDTH = 600
 BACKGROUND_COLOR = (0, 0, 0)
 POINT_COLOR = (255, 0, 255)
 FONTSIZE = 10
@@ -50,45 +51,32 @@ def parseline(line: str, regex: str) -> Point:
 
 
 def get_bounds(points, current_step):
-    min_x = 0
-    min_y = 0
-    max_x = 0
-    max_y = 0
-    for pont in points:
-        position = point.get_position(current_step)
-        if position.x < min_x:
-            min_x = position.x
-        if position.y < min_y:
-            min_y = position.y
-        if position.x > max_x:
-            max_x = position.x
-    x1 = min(points, key=lambda p: p.position.x).position.x
-    y1 = min(points, key=lambda p: p.position.y).position.y
-    x2 = max(points, key=lambda p: p.position.x).position.x
-    y2 = max(points, key=lambda p: p.position.y).position.y
-    return (Coordinate(x1, y1), Coordinate(x2, y2))
+    min_x = min(p.position.x for p in points)
+    min_y = min(p.position.y for p in points)
+    max_x = max(p.position.x for p in points)
+    max_y = max(p.position.y for p in points)
+    return (Coordinate(min_x, min_y), Coordinate(max_x, max_y))
 
 
 def get_viewport_coordinate(point, current_step, bounds, viewport_scale, tx, ty):
     position = point.get_position(current_step)
-    new_x = (position.x + bounds[0].x * -1) * viewport_scale
-    new_y = (position.y + bounds[0].y * -1) * viewport_scale
+    new_x = position.x * viewport_scale
+    new_y = position.y * viewport_scale
     return Coordinate(round(tx(position.x)), round(ty(position.y)))
 
 
 if __name__ == '__main__':
-    points = parsefile(INPUT, REGEX)
-    bounds = get_bounds(points)
+    current_step = 0
+    steps = 1
 
+    points = parsefile(INPUT, REGEX)
+    bounds = get_bounds(points, current_step)
     width = abs(bounds[0].x) + abs(bounds[1].x)
     height = abs(bounds[0].y) + abs(bounds[1].y)
     aspect_ratio = width / height
-
     viewport_width = SCREEN_WIDTH
     viewport_height = round(viewport_width * aspect_ratio)
     viewport_scale = viewport_width / width
-    current_step = 0
-    steps = 1
 
     def tx(x): return viewport_width * (x + bounds[1].x) / width
 
@@ -99,15 +87,6 @@ if __name__ == '__main__':
                              PADDING,
                              viewport_width,
                              viewport_height)
-
-    for point in points:
-        coordinate = get_viewport_coordinate(point,
-                                             current_step,
-                                             bounds,
-                                             viewport_scale,
-                                             tx,
-                                             ty)
-        print(f'{coordinate.x}, {coordinate.y}')
     while not uiHelper.done:
         uiHelper.onloop(BACKGROUND_COLOR, current_step, steps)
 
@@ -120,11 +99,19 @@ if __name__ == '__main__':
         elif uiHelper.is_left_pressed():
             current_step = max(0, current_step - steps)
 
-        bounds = get_bounds(points, current_step)
         viewport_coordinates = [
             get_viewport_coordinate(
                 p, current_step, bounds, viewport_scale, tx, ty)
             for p in points]
+
+        foo = range(len(points))
+        bar = sorted(points, key=lambda p: p.position.x)
+        baz = itertools.groupby(bar, key=lambda p: p.position)
+        for k, g in baz:
+            a = len(list(g))
+            if a > 1:
+                print(k, a)
+
         for coordinate in viewport_coordinates:
             uiHelper.draw_coordinate(coordinate, POINT_COLOR)
 

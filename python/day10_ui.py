@@ -6,6 +6,8 @@ class Day10UIHelper(object):
         pygame.init()
         pygame.font.init()
 
+        pygame.display.set_caption('Advent of Code 2018 - Day 10')
+
         self.screen = pygame.display.set_mode((width, height))
         self.font = pygame.font.SysFont('Arial', fontsize)
         self.fontcolor = fontcolor
@@ -24,7 +26,7 @@ class Day10UIHelper(object):
     def draw_coordinate(self, coordinate, color):
         pygame.draw.rect(self.screen,
                          color,
-                         (coordinate.x, coordinate.y, 10, 10))
+                         (coordinate.x, coordinate.y, 1, 1))
 
     def draw(self):
         pygame.display.flip()

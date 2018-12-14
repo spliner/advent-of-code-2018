@@ -24,7 +24,7 @@ class Point(object):
         self.position = position
         self.velocity = velocity
 
-    def get_position(self, step: int) -> Coordinate:
+    def get_coordinate(self, step: int) -> Coordinate:
         pos_x = self.position.x + self.velocity.x * step
         pos_y = self.position.y + self.velocity.y * step
         return Coordinate(pos_x, pos_y)
@@ -50,27 +50,27 @@ def parseline(line: str, regex: str) -> Point:
     return Point(Coordinate(pos_x, pos_y), Coordinate(vel_x, vel_y))
 
 
-def get_bounds(points, current_step):
-    min_x = min(p.position.x for p in points)
-    min_y = min(p.position.y for p in points)
-    max_x = max(p.position.x for p in points)
-    max_y = max(p.position.y for p in points)
-    return (Coordinate(min_x, min_y), Coordinate(max_x, max_y))
+def get_bounds(coordinates):
+    min_x = min(c.x for c in coordinates)
+    min_y = min(c.y for c in coordinates)
+    max_x = max(c.x for c in coordinates)
+    max_y = max(c.y for c in coordinates)
+    return Coordinate(min_x, min_y), Coordinate(max_x, max_y)
 
 
-def get_viewport_coordinate(point, current_step, bounds, viewport_scale, tx, ty):
-    position = point.get_position(current_step)
-    new_x = position.x * viewport_scale
-    new_y = position.y * viewport_scale
-    return Coordinate(round(tx(position.x)), round(ty(position.y)))
+def get_viewport_coordinates(point, current_step, tx, ty):
+    coordinate = point.get_coordinate(current_step)
+    return Coordinate(tx(coordinate.x), ty(coordinate.y))
 
 
-if __name__ == '__main__':
+def run():
     current_step = 0
     steps = 1
 
     points = parsefile(INPUT, REGEX)
-    bounds = get_bounds(points, current_step)
+    coordinates = [p.get_coordinate(current_step) for p in points]
+    bounds = get_bounds(coordinates)
+
     width = abs(bounds[0].x) + abs(bounds[1].x)
     height = abs(bounds[0].y) + abs(bounds[1].y)
     aspect_ratio = width / height
@@ -78,41 +78,41 @@ if __name__ == '__main__':
     viewport_height = round(viewport_width * aspect_ratio)
     viewport_scale = viewport_width / width
 
-    def tx(x): return viewport_width * (x + bounds[1].x) / width
+    ui_helper = Day10UIHelper(FONT_COLOR,
+                              FONTSIZE,
+                              PADDING,
+                              viewport_width,
+                              viewport_height)
 
-    def ty(y): return viewport_height * (bounds[1].y - y) / height
+    def tx(x):
+        return x * viewport_scale
 
-    uiHelper = Day10UIHelper(FONT_COLOR,
-                             FONTSIZE,
-                             PADDING,
-                             viewport_width,
-                             viewport_height)
-    while not uiHelper.done:
-        uiHelper.onloop(BACKGROUND_COLOR, current_step, steps)
+    def ty(y):
+        return y * viewport_scale
 
-        if uiHelper.is_up_pressed():
+    while not ui_helper.done:
+        ui_helper.onloop(BACKGROUND_COLOR, current_step, steps)
+
+        if ui_helper.is_up_pressed():
             steps += 1
-        elif uiHelper.is_down_pressed():
+        elif ui_helper.is_down_pressed():
             steps = max(1, steps - 1)
-        elif uiHelper.is_right_pressed():
+        elif ui_helper.is_right_pressed():
             current_step += steps
-        elif uiHelper.is_left_pressed():
+        elif ui_helper.is_left_pressed():
             current_step = max(0, current_step - steps)
 
-        viewport_coordinates = [
-            get_viewport_coordinate(
-                p, current_step, bounds, viewport_scale, tx, ty)
-            for p in points]
+        coordinates = [p.get_coordinate(current_step) for p in points]
+        bounds = get_bounds(coordinates)
+        width = abs(bounds[0].x) + abs(bounds[1].x)
+        viewport_scale = viewport_width / width
 
-        foo = range(len(points))
-        bar = sorted(points, key=lambda p: p.position.x)
-        baz = itertools.groupby(bar, key=lambda p: p.position)
-        for k, g in baz:
-            a = len(list(g))
-            if a > 1:
-                print(k, a)
-
+        viewport_coordinates = [get_viewport_coordinates(p, current_step, tx, ty) for p in points]
         for coordinate in viewport_coordinates:
-            uiHelper.draw_coordinate(coordinate, POINT_COLOR)
+            ui_helper.draw_coordinate(coordinate, POINT_COLOR)
 
-        uiHelper.draw()
+        ui_helper.draw()
+
+
+if __name__ == '__main__':
+    run()

@@ -26,7 +26,7 @@ class Day10UIHelper(object):
     def draw_coordinate(self, coordinate, color):
         pygame.draw.rect(self.screen,
                          color,
-                         (coordinate.x, coordinate.y, 1, 1))
+                         (coordinate.x, coordinate.y, 5, 5))
 
     def draw(self):
         pygame.display.flip()

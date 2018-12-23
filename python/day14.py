@@ -1,11 +1,11 @@
 INPUT = 704321
 
 
-def part1(input):
+def part1(recipes):
     scores = '37'
     elf1_index = 0
     elf2_index = 1
-    for _ in range(input + 10):
+    for _ in range(recipes + 10):
         elf1_score = int(scores[elf1_index])
         elf2_score = int(scores[elf2_index])
         result = str(elf1_score + elf2_score)
@@ -14,7 +14,7 @@ def part1(input):
             scores += result[1]
         elf1_index = (elf1_index + elf1_score + 1) % len(scores)
         elf2_index = (elf2_index + elf2_score + 1) % len(scores)
-    return scores[input:input + 10]
+    return scores[recipes:recipes + 10]
 
 
 def main():

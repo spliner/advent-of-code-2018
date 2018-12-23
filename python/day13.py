@@ -3,6 +3,7 @@ from typing import List
 
 INPUT_TEST1 = '../inputs/day13_test1.txt'
 INPUT_TEST2 = '../inputs/day13_test2.txt'
+INPUT_PART2_TEST = '../inputs/day13_part2_test.txt'
 INPUT = '../inputs/day13.txt'
 
 
@@ -128,18 +129,28 @@ def part1(track: List[List[str]], carts: List[Cart]):
 
  
 def tick(track: List[List[str]], carts: List[Cart]):
-    ordered_carts = sorted(carts, key=lambda c: (c.x, -c.y))
+    ordered_carts = sorted(carts, key=lambda c: (c.y, c.x))
     for cart in ordered_carts:
         cart.move(track, carts)
 
 
+def part2(track: List[List[str]], carts: List[Cart]):
+    while len(carts) > 1:
+        tick(track, carts)
+        carts = [c for c in carts if not c.crashed]
+    print([(c.x, c.y) for c in carts])
+
+
 def main():
     track1, carts1 = parsefile(INPUT_TEST1)
-    # part1(track1, carts1)
+    part1(track1, carts1)
     track2, carts2 = parsefile(INPUT_TEST2)
-    # part1(track2, carts2)
+    part1(track2, carts2)
     track3, carts3 = parsefile(INPUT)
     part1(track3, carts3)
+    track4, carts4 = parsefile(INPUT_PART2_TEST)
+    part2(track4, carts4)
+    part2(track3, carts3)
 
 
 if __name__ == "__main__":

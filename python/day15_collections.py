@@ -1,4 +1,5 @@
 import collections
+import heapq
 
 
 class SimpleGraph(object):
@@ -31,6 +32,21 @@ class SquareGrid(object):
         results = filter(self.passable, results)
         return results
 
+    def cost(self, from_node, to_node):
+        return 1
+
+    def __repr__(self):
+        lines = []
+        for y in range(self.height):
+            line = ''
+            for x in range(self.width):
+                line += '#' if (x, y) in self.walls else '.'
+            lines.append(line)
+        return '\n'.join(lines)
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class Queue(object):
     def __init__(self):
@@ -44,3 +60,16 @@ class Queue(object):
 
     def get(self):
         return self.elements.popleft()
+
+class PriorityQueue(object):
+    def __init__(self):
+        self.elements = []
+
+    def empty(self):
+        return len(self.elements) == 0
+
+    def put(self, item, priority):
+        heapq.heappush(self.elements, (priority, item))
+
+    def get(self):
+        return heapq.heappop(self.elements)[1]

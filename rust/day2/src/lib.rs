@@ -60,30 +60,28 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn part1(input: &str) -> i32 {
-    let (two_total, three_total) = input
-        .lines()
-        .fold((0, 0), |(x, y), l| {
-            let mut map = HashMap::new();
-            for c in l.chars() {
-                let count = map.entry(c).or_insert(0);
-                *count += 1;
-            }
+    let (two_total, three_total) = input.lines().fold((0, 0), |(x, y), l| {
+        let mut map = HashMap::new();
+        for c in l.chars() {
+            let count = map.entry(c).or_insert(0);
+            *count += 1;
+        }
 
-            let mut has_two = false;
-            let mut has_three = false;
+        let mut has_two = false;
+        let mut has_three = false;
 
-            for (_, v) in map {
-                has_two = has_two || v == 2;
-                has_three = has_three || v == 3;
-            }
+        for (_, v) in map {
+            has_two = has_two || v == 2;
+            has_three = has_three || v == 3;
+        }
 
-            match (has_two, has_three) {
-                (true, true) => (x + 1, y + 1),
-                (true, false) => (x + 1, y),
-                (false, true) => (x, y + 1),
-                (false, false) => (x, y),
-            }
-        });
+        match (has_two, has_three) {
+            (true, true) => (x + 1, y + 1),
+            (true, false) => (x + 1, y),
+            (false, true) => (x, y + 1),
+            (false, false) => (x, y),
+        }
+    });
 
     two_total * three_total
 }

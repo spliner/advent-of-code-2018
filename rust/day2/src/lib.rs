@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::collections::HashMap;
 
 pub enum Part {
     Part1,
@@ -60,7 +60,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn part1(input: &str) -> i32 {
-    let (two_total, three_total) = input.lines()
+    let (two_total, three_total) = input
+        .lines()
         .map(|l| {
             let mut map = HashMap::new();
             for c in l.chars() {

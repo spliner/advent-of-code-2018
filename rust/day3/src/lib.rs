@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fs;
+use regex::Regex;
 
 pub enum Part {
     Part1,
@@ -42,6 +43,58 @@ impl Config {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Point {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y, }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Rectangle {
+    position: Point,
+    width: i32,
+    height: i32,
+}
+
+impl Rectangle {
+    pub fn new(position: Point, width: i32, height: i32) -> Self {
+        Self { position, width, height, }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Claim {
+    id: String,
+    rectangle: Rectangle,
+}
+
+impl Claim {
+    pub fn from_str(raw_value: &str) -> Option<Self> {
+        let re = Regex::new(r"^#(\d+) @ (\d+),(\d+): (\d+)x(\d+)$").unwrap();
+        let captures = re.captures(raw_value);
+        match captures {
+            Some(c) => {
+                let id = String::from(&c[1]);
+                let x = *&c[2].parse::<i32>().unwrap();
+                let y = *&c[3].parse::<i32>().unwrap();
+                let width = *&c[4].parse::<i32>().unwrap();
+                let height = *&c[5].parse::<i32>().unwrap();
+                let position = Point::new(x, y);
+                let rectangle = Rectangle::new(position, width, height);
+                let claim = Self { id, rectangle };
+                Some(claim)
+            },
+            None => None,
+        }
+    }
+}
+
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
 
@@ -55,4 +108,31 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn parse_valid_claim() {
+        let raw_claim = "#1 @ 1,3: 4x4";
+        let expected = Claim {
+            id: String::from("1"),
+            rectangle: Rectangle::new(Point::new(1, 3), 4, 4),
+        };
+
+        assert_eq!(Some(expected), Claim::from_str(raw_claim));
+    }
+
+    #[test]
+    pub fn parse_valid_large_claim() {
+        let raw_claim = "#123 @ 123,323: 423x423";
+        let expected = Claim {
+            id: String::from("123"),
+            rectangle: Rectangle::new(Point::new(123, 323), 423, 423),
+        };
+
+        assert_eq!(Some(expected), Claim::from_str(raw_claim));
+    }
 }

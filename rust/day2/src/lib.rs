@@ -52,7 +52,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             println!("{}", result);
         }
         Part::Part2 => {
-            // TODO: Part 2
+            let result = part2(&contents);
+            println!("{:?}", result);
         }
     }
 
@@ -86,6 +87,34 @@ pub fn part1(input: &str) -> i32 {
     two_total * three_total
 }
 
+pub fn part2(input: &str) -> Option<String> {
+    let lines: Vec<&str> = input.lines().collect();
+    for (skip, &line) in lines.iter().enumerate() {
+        for &other_line in lines.iter().skip(skip) {
+            if line.len() != other_line.len() {
+                continue;
+            }
+
+            let id = line.chars()
+                .zip(other_line.chars())
+                .filter_map(|(c, other_char)| {
+                    if c == other_char {
+                        Some(c)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<String>();
+
+            if id.len() == line.len() - 1 {
+                return Some(id);
+            }
+        }
+    }
+
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,5 +131,19 @@ abcdee
 ababab";
 
         assert_eq!(12, part1(contents));
+    }
+
+    #[test]
+    fn part2_test() {
+        let contents = "\
+abcde
+fghij
+klmno
+pqrst
+fguij
+axcye
+wvxyz";
+
+        assert_eq!(Some(String::from("fgij")), part2(&contents));
     }
 }

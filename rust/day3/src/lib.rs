@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs;
 use regex::Regex;
+use std::collections::HashSet;
 
 pub enum Part {
     Part1,
@@ -43,7 +44,7 @@ impl Config {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct Point {
     x: i32,
     y: i32,
@@ -65,6 +66,18 @@ pub struct Rectangle {
 impl Rectangle {
     pub fn new(position: Point, width: i32, height: i32) -> Self {
         Self { position, width, height, }
+    }
+
+    pub fn all_points(&self) -> Vec<Point> {
+        let mut points = Vec::new();
+
+        for y in self.position.y..self.position.y + self.height {
+            for x in self.position.x..self.position.x + self.width {
+                points.push(Point::new(x, y));
+            }
+        }
+
+        points
     }
 }
 
@@ -110,12 +123,30 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+pub fn part1(claims: &Vec<Claim>) -> i32 {
+    let mut count = 0;
+    let mut points: HashSet<Point> = HashSet::new();
+
+    claims.iter()
+        .flat_map(|c| c.rectangle.all_points())
+        .for_each(|p| {
+            if points.contains(&p) {
+                println!("{:?}", &p);
+            }
+            if !points.insert(p) {
+                count += 1;
+            }
+        });
+
+    count
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    pub fn parse_valid_claim() {
+    fn parse_valid_claim() {
         let raw_claim = "#1 @ 1,3: 4x4";
         let expected = Claim {
             id: String::from("1"),
@@ -126,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_valid_large_claim() {
+    fn parse_valid_large_claim() {
         let raw_claim = "#123 @ 123,323: 423x423";
         let expected = Claim {
             id: String::from("123"),
@@ -134,5 +165,43 @@ mod tests {
         };
 
         assert_eq!(Some(expected), Claim::from_str(raw_claim));
+    }
+
+    #[test]
+    fn rectangle_get_all_points() {
+        let position = Point::new(3, 1);
+        let rectangle = Rectangle::new(position, 4, 4);
+
+        let expected = vec![
+            Point::new(3, 1),
+            Point::new(4, 1),
+            Point::new(5, 1),
+            Point::new(6, 1),
+            Point::new(3, 2),
+            Point::new(4, 2),
+            Point::new(5, 2),
+            Point::new(6, 2),
+            Point::new(3, 3),
+            Point::new(4, 3),
+            Point::new(5, 3),
+            Point::new(6, 3),
+            Point::new(3, 4),
+            Point::new(4, 4),
+            Point::new(5, 4),
+            Point::new(6, 4),
+        ];
+
+        assert_eq!(expected, rectangle.all_points())
+    }
+
+    #[test]
+    fn part1_test() {
+        let claims = vec![
+            Claim::from_str("#1 @ 1,3: 4x4").unwrap(),
+            Claim::from_str("#2 @ 3,1: 4x4").unwrap(),
+            Claim::from_str("#3 @ 5,5: 2x2").unwrap(),
+        ];
+
+        assert_eq!(4, part1(&claims));
     }
 }

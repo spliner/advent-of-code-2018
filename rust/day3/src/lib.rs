@@ -58,26 +58,19 @@ impl Point {
 
 #[derive(Debug, PartialEq)]
 pub struct Rectangle {
-    position: Point,
-    width: i32,
-    height: i32,
+    top_left: Point,
+    bottom_right: Point,
 }
 
 impl Rectangle {
-    pub fn new(position: Point, width: i32, height: i32) -> Self {
-        Self { position, width, height, }
+    pub fn new(top_left: Point, bottom_right: Point) -> Self {
+        Self { top_left, bottom_right, }
     }
 
-    pub fn all_points(&self) -> Vec<Point> {
-        let mut points = Vec::new();
-
-        for y in self.position.y..self.position.y + self.height {
-            for x in self.position.x..self.position.x + self.width {
-                points.push(Point::new(x, y));
-            }
-        }
-
-        points
+    pub fn area(&self) -> i32 {
+        let width = self.bottom_right.x - self.top_left.x;
+        let height = self.bottom_right.y - self.top_left.y;
+        width * height
     }
 }
 
@@ -96,11 +89,15 @@ impl Claim {
                 let id = String::from(&c[1]);
                 let x = *&c[2].parse::<i32>().unwrap();
                 let y = *&c[3].parse::<i32>().unwrap();
+                let top_left = Point::new(x, y);
+
                 let width = *&c[4].parse::<i32>().unwrap();
                 let height = *&c[5].parse::<i32>().unwrap();
-                let position = Point::new(x, y);
-                let rectangle = Rectangle::new(position, width, height);
+                let bottom_right = Point::new(x + width, y + height);
+
+                let rectangle = Rectangle::new(top_left, bottom_right);
                 let claim = Self { id, rectangle };
+
                 Some(claim)
             },
             None => None,
@@ -113,7 +110,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     match config.part {
         Part::Part1 => {
-            // TODO: Part 1
+            let claims = parse_claims(&contents).unwrap();
+            let result = part1(&claims);
+            println!("{}", result);
         }
         Part::Part2 => {
             // TODO: Part 2
@@ -123,22 +122,15 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn part1(claims: &Vec<Claim>) -> i32 {
-    let mut count = 0;
-    let mut points: HashSet<Point> = HashSet::new();
+fn parse_claims(contents: &str) -> Option<Vec<Claim>> {
+    contents
+        .lines()
+        .map(|l| Claim::from_str(l.trim()))
+        .collect()
+}
 
-    claims.iter()
-        .flat_map(|c| c.rectangle.all_points())
-        .for_each(|p| {
-            if points.contains(&p) {
-                println!("{:?}", &p);
-            }
-            if !points.insert(p) {
-                count += 1;
-            }
-        });
-
-    count
+fn part1(claims: &Vec<Claim>) -> i32 {
+    0
 }
 
 #[cfg(test)]
@@ -150,7 +142,7 @@ mod tests {
         let raw_claim = "#1 @ 1,3: 4x4";
         let expected = Claim {
             id: String::from("1"),
-            rectangle: Rectangle::new(Point::new(1, 3), 4, 4),
+            rectangle: Rectangle::new(Point::new(1, 3), Point::new(5, 7)),
         };
 
         assert_eq!(Some(expected), Claim::from_str(raw_claim));
@@ -158,40 +150,22 @@ mod tests {
 
     #[test]
     fn parse_valid_large_claim() {
-        let raw_claim = "#123 @ 123,323: 423x423";
+        let raw_claim = "#123 @ 10,100: 50x5";
         let expected = Claim {
             id: String::from("123"),
-            rectangle: Rectangle::new(Point::new(123, 323), 423, 423),
+            rectangle: Rectangle::new(Point::new(10, 100), Point::new(60, 105)),
         };
 
         assert_eq!(Some(expected), Claim::from_str(raw_claim));
     }
 
     #[test]
-    fn rectangle_get_all_points() {
-        let position = Point::new(3, 1);
-        let rectangle = Rectangle::new(position, 4, 4);
+    fn rectangle_area() {
+        let top_left = Point::new(10, 10);
+        let bottom_right = Point::new(15, 15);
+        let rectangle = Rectangle::new(top_left, bottom_right);
 
-        let expected = vec![
-            Point::new(3, 1),
-            Point::new(4, 1),
-            Point::new(5, 1),
-            Point::new(6, 1),
-            Point::new(3, 2),
-            Point::new(4, 2),
-            Point::new(5, 2),
-            Point::new(6, 2),
-            Point::new(3, 3),
-            Point::new(4, 3),
-            Point::new(5, 3),
-            Point::new(6, 3),
-            Point::new(3, 4),
-            Point::new(4, 4),
-            Point::new(5, 4),
-            Point::new(6, 4),
-        ];
-
-        assert_eq!(expected, rectangle.all_points())
+        assert_eq!(25, rectangle.area());
     }
 
     #[test]
@@ -202,6 +176,6 @@ mod tests {
             Claim::from_str("#3 @ 5,5: 2x2").unwrap(),
         ];
 
-        assert_eq!(4, part1(&claims));
+        assert_eq!(1, part1(&claims));
     }
 }

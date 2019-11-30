@@ -1,5 +1,7 @@
+use std::cmp::{max, min};
 use std::error::Error;
 use std::fs;
+
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -52,7 +54,7 @@ pub struct Point {
 
 impl Point {
     pub fn new(x: i32, y: i32) -> Self {
-        Self { x, y, }
+        Self { x, y }
     }
 }
 
@@ -64,13 +66,46 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub fn new(top_left: Point, bottom_right: Point) -> Self {
-        Self { top_left, bottom_right, }
+        Self {
+            top_left,
+            bottom_right,
+        }
     }
 
     pub fn area(&self) -> i32 {
         let width = self.bottom_right.x - self.top_left.x;
         let height = self.bottom_right.y - self.top_left.y;
         width * height
+    }
+
+    pub fn intersection(&self, other: &Rectangle) -> Option<Rectangle> {
+        let top_left_x = max(self.top_left.x, other.top_left.x);
+        let top_left_y = max(self.top_left.y, other.top_left.y);
+        let bottom_right_x = min(self.bottom_right.x, other.bottom_right.x);
+        let bottom_right_y = min(self.bottom_right.y, other.bottom_right.y);
+
+        if top_left_x > bottom_right_x || top_left_y > bottom_right_y {
+            return None;
+        }
+
+        let intersection = Rectangle::new(
+            Point::new(top_left_x, top_left_y),
+            Point::new(bottom_right_x, bottom_right_y),
+        );
+
+        Some(intersection)
+    }
+
+    pub fn square_inches(&self) -> Vec<Point> {
+        let mut squares = Vec::new();
+
+        for y in self.top_left.y..=self.bottom_right.y {
+            for x in self.top_left.x..=self.bottom_right.x {
+                squares.push(Point::new(x, y));
+            }
+        }
+
+        squares
     }
 }
 
@@ -93,13 +128,13 @@ impl Claim {
 
                 let width = *&c[4].parse::<i32>().unwrap();
                 let height = *&c[5].parse::<i32>().unwrap();
-                let bottom_right = Point::new(x + width, y + height);
+                let bottom_right = Point::new(x + width - 1, y + height - 1);
 
                 let rectangle = Rectangle::new(top_left, bottom_right);
                 let claim = Self { id, rectangle };
 
                 Some(claim)
-            },
+            }
             None => None,
         }
     }
@@ -129,8 +164,21 @@ fn parse_claims(contents: &str) -> Option<Vec<Claim>> {
         .collect()
 }
 
-fn part1(claims: &Vec<Claim>) -> i32 {
-    0
+fn part1(claims: &Vec<Claim>) -> usize {
+    let mut square_inches = HashSet::new();
+
+    for (i, claim) in claims.iter().enumerate() {
+        for other_claim in claims.iter().skip(i + 1) {
+            let intersection = claim.rectangle.intersection(&other_claim.rectangle);
+            if let Some(i) = intersection {
+                for square_inch in i.square_inches() {
+                    square_inches.insert(square_inch);
+                }
+            }
+        }
+    }
+
+    square_inches.len()
 }
 
 #[cfg(test)]
@@ -142,7 +190,7 @@ mod tests {
         let raw_claim = "#1 @ 1,3: 4x4";
         let expected = Claim {
             id: String::from("1"),
-            rectangle: Rectangle::new(Point::new(1, 3), Point::new(5, 7)),
+            rectangle: Rectangle::new(Point::new(1, 3), Point::new(4, 6)),
         };
 
         assert_eq!(Some(expected), Claim::from_str(raw_claim));
@@ -153,7 +201,7 @@ mod tests {
         let raw_claim = "#123 @ 10,100: 50x5";
         let expected = Claim {
             id: String::from("123"),
-            rectangle: Rectangle::new(Point::new(10, 100), Point::new(60, 105)),
+            rectangle: Rectangle::new(Point::new(10, 100), Point::new(59, 104)),
         };
 
         assert_eq!(Some(expected), Claim::from_str(raw_claim));
@@ -169,6 +217,32 @@ mod tests {
     }
 
     #[test]
+    fn rectangle_intersection() {
+        let rectangle1 = Rectangle::new(Point::new(1, 3), Point::new(4, 6));
+        let rectangle2 = Rectangle::new(Point::new(3, 1), Point::new(6, 4));
+
+        let intersection = rectangle1.intersection(&rectangle2);
+
+        let expected = Rectangle::new(Point::new(3, 3), Point::new(4, 4));
+        assert_eq!(Some(expected), intersection);
+    }
+
+    #[test]
+    fn rectangle_square_inches() {
+        let rectangle = Rectangle::new(Point::new(3, 3), Point::new(4, 4));
+
+        let square_inches = rectangle.square_inches();
+
+        let expected = vec![
+            Point::new(3, 3),
+            Point::new(4, 3),
+            Point::new(3, 4),
+            Point::new(4, 4),
+        ];
+        assert_eq!(expected, square_inches);
+    }
+
+    #[test]
     fn part1_test() {
         let claims = vec![
             Claim::from_str("#1 @ 1,3: 4x4").unwrap(),
@@ -176,6 +250,6 @@ mod tests {
             Claim::from_str("#3 @ 5,5: 2x2").unwrap(),
         ];
 
-        assert_eq!(1, part1(&claims));
+        assert_eq!(4, part1(&claims));
     }
 }

@@ -143,14 +143,15 @@ impl Claim {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
 
+    let claims = parse_claims(&contents).unwrap();
     match config.part {
         Part::Part1 => {
-            let claims = parse_claims(&contents).unwrap();
             let result = part1(&claims);
             println!("{}", result);
         }
         Part::Part2 => {
-            // TODO: Part 2
+            let result = part2(&claims);
+            println!("{:?}", result);
         }
     }
 
@@ -179,6 +180,30 @@ fn part1(claims: &Vec<Claim>) -> usize {
     }
 
     square_inches.len()
+}
+
+fn part2(claims: &Vec<Claim>) -> Option<String> {
+    let mut intersections = HashSet::new();
+
+    for (i, claim) in claims.iter().enumerate() {
+        for other_claim in claims.iter().skip(i + 1) {
+            let intersection = claim.rectangle.intersection(&other_claim.rectangle);
+            if let Some(_) = intersection {
+                intersections.insert(&claim.id);
+                intersections.insert(&other_claim.id);
+            }
+        }
+    }
+
+    for claim in claims {
+        let id = &claim.id;
+
+        if !intersections.contains(id) {
+            return Some(String::from(id))
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -251,5 +276,16 @@ mod tests {
         ];
 
         assert_eq!(4, part1(&claims));
+    }
+
+    #[test]
+    fn part2_test() {
+        let claims = vec![
+            Claim::from_str("#1 @ 1,3: 4x4").unwrap(),
+            Claim::from_str("#2 @ 3,1: 4x4").unwrap(),
+            Claim::from_str("#3 @ 5,5: 2x2").unwrap(),
+        ];
+
+        assert_eq!(Some(String::from("3")), part2(&claims));
     }
 }
